@@ -1,6 +1,7 @@
 #include<iostream>
 #include<iomanip>
 #include<cmath>
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -12,40 +13,33 @@ using std::vector;
 
 const string file_name = "course_marks.dat";
 
-struct Data 
+struct Course 
 {
-    vector<float> mark_data;
-    vector<int> course_id;
-    vector<string> course_name;
+    string name;
+    float mark;
+    int id;
+
+    Course(string name, float mark, int id)
+    {
+        this->name = name;
+        this->mark = mark;
+        this->id = id;
+    }
 };
 
-float get_standard_deviation(vector<float> data)
+float get_standard_deviation(vector<Course>& data, float mean, int size)
 {
     // Takes a vector and returns the standard deviation of the elements
-    double sum = 0.0, mean, standardDeviation = 0.0;
-
-    int size = data.size();
+    float standard_deviation = 0.0;
 
     for (int i = 0; i < size; ++i) {
-        sum += data[i];
+        standard_deviation += pow(data[i].mark - mean, 2);
     }
 
-    mean = sum / size;
-
-    for (int i = 0; i < size; ++i) {
-        standardDeviation += pow(data[i] - mean, 2);
-    }
-
-    return sqrt(standardDeviation / size);
+    return sqrt(standard_deviation / size);
 }
 
-float get_standard_error(vector<float> data, float standard_deviation)
-{
-    int size = data.size();
-    return standard_deviation/sqrt(size);
-}
-
-int get_integer_input(const string& message) 
+int get_integer_input(string& message) 
 {
   // Requests and validates input to ensure strictly positive integer type
   string line;
@@ -64,7 +58,7 @@ int get_integer_input(const string& message)
   }
 }
 
-Data read_file()
+vector<Course> read_file()
 {
     /* Open a file and read the coloumns into three seperate vectors, 
     which are then stored using a struct */
@@ -78,8 +72,9 @@ Data read_file()
         std::cerr << "Failed to open file\n";
     }
 
-    string line;
-    Data values;
+    //Data values;
+
+    vector<Course> courses;
 
     int row_count = 0;
     float mark;
@@ -92,51 +87,59 @@ Data read_file()
 
         getline(file, name);
 
-        values.mark_data.push_back(mark);
-        values.course_id.push_back(id);
-        values.course_name.push_back(name);
+        courses.push_back(Course(name, mark, id));
         row_count++;
     }
 
-    return values;
+    return courses;
 }
 
-void analyse_data(vector<float> data)
+void analyse_data(vector<Course>& data)
 {
-    
-    float standard_deviation = get_standard_deviation(data);
-    float standard_error = get_standard_error(data, standard_deviation);
+    /* Takes a vector of course data and performs a 
+    generic statistical analysis on marks of said data */
+    float sum = 0.0;
+    int size = data.size();
 
+    for (int i = 0; i < size; ++i) {
+        sum += data[i].mark;
+    }
+
+    float mean = sum / size;
+    
+    float standard_deviation = get_standard_deviation(data, mean, size);
+    float standard_error = standard_deviation/sqrt(size);
+
+    cout  << "\nMean average of all marks: " << mean;
     cout << "\nStandard deviation of all marks: " << standard_deviation;
     cout << "\nStandard error of all marks: " << standard_error;
-    
 }
 
 int main()
 {
     
-    Data data = read_file();
-    int row_count = data.mark_data.size();
+    vector<Course> data = read_file();
+    int row_count = data.size();
     
-    cout << "\n\n\u001b[1mFull list of data:\n\n\033[0m";
+    cout << "\n\n\033[1mFull list of data:\n\n\033[0m";
     for (int i = 0; i < row_count; i++)
     {
-        cout << data.mark_data[i] << " "
-             << data.course_id[i] << " " 
-             << data.course_name[i] << "\n";
+        cout << data[i].name  << " ("
+             << data[i].id << "): " 
+             << data[i].mark << "\n";
     }
 
     cout << "\nThis file has a total of " << row_count << " entries.";
 
-    analyse_data(data.mark_data);
+    analyse_data(data);
 
     string message = "\nFor what year would you like the details of?: ";
     int target_year = get_integer_input(message);
 
-    Data year_data;
+    vector<Course> year_data;
     for (int i = 0; i < row_count; i++)
     {
-        int target_value = data.course_id[i];
+        int target_value = data[i].id;
         while (target_value >= 10)
         {
             target_value /= 10;
@@ -144,24 +147,22 @@ int main()
 
         if (target_value == target_year)
         {
-            year_data.mark_data.push_back(data.mark_data[i]);
-            year_data.course_id.push_back(data.course_id[i]);
-            year_data.course_name.push_back(data.course_name[i]);
+            year_data.push_back(data[i]);
         }
     }
 
-    cout << "\n\n\u001b[1mData for year " << target_year << ":\n\n\033[0m";
-    for (int i = 0; i < year_data.mark_data.size(); i++)
+    cout << "\n\n\033[1mData for year " << target_year << ":\n\n\033[0m";
+    for (int i = 0; i < year_data.size(); i++)
     {
-        cout << year_data.mark_data[i] << " "
-             << year_data.course_id[i] << " " 
-             << year_data.course_name[i] << "\n";
+        cout << year_data[i].name  << " ("
+             << year_data[i].id << "): " 
+             << year_data[i].mark << "\n";
     }
 
-    row_count = year_data.mark_data.size();
-    cout << "\nThis file has a total of " << row_count << " entries.";
+    row_count = year_data.size();
+    cout << "\nThis year has a total of " << row_count << " entries.";
     
-    analyse_data(year_data.mark_data);
+    analyse_data(year_data);
 
     return 0;
 }
