@@ -88,27 +88,52 @@ vector<Course> read_file()
     std::ifstream file(file_name);
     if (!file) 
     { 
-        std::cerr << "Failed to open file\n";
+        std::cerr << "\033[1;31mFailed to open file\033[0m\n";
     }
 
     //Data values;
 
     vector<Course> courses;
+    vector<int> bad_lines;
+    int line_number = 0;
 
-    int row_count = 0;
-    float mark;
-    int id;
-    string name;
-    while (file >> mark >> id)
+    string line;
+
+    while (std::getline(file, line))
     {
-        // Remove leading whitespace
-        name.erase(0, name.find_first_not_of(" "));
+        line_number += 1;
+        std::istringstream converter(line);
 
-        getline(file, name);
+        float mark;
+        int id;
+        string name;
 
-        courses.push_back(Course(name, mark, id));
-        row_count++;
+        if (converter >> mark >> id)
+        {
+            std::getline(converter, name);
+
+            // Remove leading whitespace
+            name.erase(0, name.find_first_not_of(" "));
+
+            courses.push_back(Course(name, mark, id));
+        }
+        else
+        {
+            bad_lines.push_back(line_number);
+        }
     }
+
+    if (bad_lines.size() > 0)
+    {
+        cout << "\033[1;33mWarning: Couldn't read data from following lines: ";
+        for (int i = 0; i < bad_lines.size(); i++)
+        {
+            cout << bad_lines[i] << ", ";
+        }
+
+        cout << "\033[0m\n";
+    }
+
 
     return courses;
 }
@@ -136,12 +161,8 @@ void analyse_data(vector<Course>& data)
 
 int main()
 {
-    
-    vector<Course> data = read_file();
-    int row_count = data.size();
-
     string message = "Should the data be ordered by name instead of ID (Y/N)?";
-    
+
     char extra_input;
     char ordered = get_char_input(message, extra_input);
     // Character input validation
@@ -153,6 +174,9 @@ int main()
       cout << "\033[1;31mError: Input must be either 'j' or 'e' \033[0m\n";
       ordered = get_char_input(message, extra_input);
     }
+
+    vector<Course> data = read_file();
+    int row_count = data.size();
 
     if (ordered == 'y')
         sort(data.begin(), data.end(), compare_courses);
