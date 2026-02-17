@@ -39,6 +39,11 @@ float get_standard_deviation(vector<Course>& data, float mean, int size)
     return sqrt(standard_deviation / size);
 }
 
+bool compare_courses(Course a, Course b) 
+{
+    return a.name.compare(b.name) < 0;
+}
+
 int get_integer_input(string& message) 
 {
   // Requests and validates input to ensure strictly positive integer type
@@ -56,6 +61,20 @@ int get_integer_input(string& message)
     else 
       cout << "\033[1;31mError: Input must be an integer between 1 and 4.\033[0m\n";
   }
+}
+
+char get_char_input(string message, char &extra)
+{
+  /* Retrieves a character input and converts to lowercase, 
+  also retrieves second character of input for validation purposes */
+  char input;
+
+  cout << "\n" << message;
+  cin.get(input);
+  cin.get(extra);
+  input = tolower(input);
+
+  return input;
 }
 
 vector<Course> read_file()
@@ -120,6 +139,23 @@ int main()
     
     vector<Course> data = read_file();
     int row_count = data.size();
+
+    string message = "Should the data be ordered by name instead of ID (Y/N)?";
+    
+    char extra_input;
+    char ordered = get_char_input(message, extra_input);
+    // Character input validation
+    while ((ordered != 'y' && ordered != 'n') || extra_input != '\n')
+    {
+      // Ignore extra letters - only need to look at first two
+      while (extra_input != '\n' && cin.get(extra_input));
+
+      cout << "\033[1;31mError: Input must be either 'j' or 'e' \033[0m\n";
+      ordered = get_char_input(message, extra_input);
+    }
+
+    if (ordered == 'y')
+        sort(data.begin(), data.end(), compare_courses);
     
     cout << "\n\n\033[1mFull list of data:\n\n\033[0m";
     for (int i = 0; i < row_count; i++)
@@ -133,7 +169,7 @@ int main()
 
     analyse_data(data);
 
-    string message = "\nFor what year would you like the details of?: ";
+    message = "\nFor what year would you like the details of?: ";
     int target_year = get_integer_input(message);
 
     vector<Course> year_data;
